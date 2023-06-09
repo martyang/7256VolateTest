@@ -66,7 +66,7 @@ def getWorkBook() -> Workbook:
     return wkbook
 
 
-def readData2Excel(dataList):
+def readData2Excel(dataList, number):
     portlist = serial.tools.list_ports_windows.comports()
     result_list = dataList
     for item in portlist:
@@ -82,18 +82,20 @@ def readData2Excel(dataList):
                 while True:
                     if sercom.inWaiting():
                         recv_data = sercom.readline().decode('utf-8', errors='replace')
-                        print(recv_data)
-                        if 'user_app_main adc value' in recv_data:
-                            adc_value = recv_data.split(':')[1].strip()
+                        if 'ntc_drv_read_temp adc value' in recv_data:
+                            adc_value = recv_data.split(':')[-1].strip()
                             adc_value_list.append(int(adc_value))
-                        elif 'user_app_main cali voltage value' in recv_data:
-                            vol = recv_data.split(':')[1].strip().split(' ')[0]
+                            print(recv_data)
+                        elif 'ntc_drv_read_temp cali voltage value' in recv_data:
+                            vol = recv_data.split(':')[-1].strip().split(' ')[0]
                             vol_list.append(int(vol))
-                        if len(adc_value_list) == 10 and len(vol_list) == 10:
+                            print(recv_data)
+                        if len(adc_value_list) == number and len(vol_list) == number:
                             result_list.append(min(adc_value_list))
                             result_list.append(max(adc_value_list))
                             result_list.append(min(vol_list))
                             result_list.append(max(vol_list))
+                            print('break')
                             break
                 sercom.close()
             except SerialException:
@@ -118,6 +120,7 @@ class ADCTest:
         self.start = content.split('\n')[2].split('=')[1]
         self.end = content.split('\n')[3].split('=')[1]
         self.step = content.split('\n')[4].split('=')[1]
+        self.number = content.split('\n')[5].split('=')[1]
 
     def startTest(self):
         try:
@@ -140,7 +143,7 @@ class ADCTest:
                 powerSetVolt(powerSuppler, self.powerType, voltage)
                 time.sleep(1)
                 dataList = [testvol]
-                readData2Excel(dataList)
+                readData2Excel(dataList, int(self.number))
             powerOff(powerSuppler, self.powerType)
 
 

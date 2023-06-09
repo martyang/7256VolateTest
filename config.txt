@@ -3,3 +3,4 @@ Power=DH1766
 start=0
 end=400
 step=10
+number=2
