@@ -1,0 +1,5 @@
+address=USB0::0x0957::0xA007::205D388B5950::0::INSTR
+Power=DH1766
+start=0
+end=400
+step=10
