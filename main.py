@@ -66,7 +66,7 @@ def getWorkBook() -> Workbook:
     return wkbook
 
 
-def readData2Excel(dataList, com):
+def readData2Excel(dataList, com, number):
     result_list = dataList
     print('测试串口' + com)
     adc_value_list = []
@@ -86,7 +86,7 @@ def readData2Excel(dataList, com):
                     vol = recv_data.split(':')[-1].strip().split(' ')[0]
                     vol_list.append(int(vol))
                     print(recv_data)
-                if len(adc_value_list) == 20 or len(vol_list) == 20:
+                if len(adc_value_list) == number or len(vol_list) == number:
                     result_list.append(min(adc_value_list))
                     result_list.append(max(adc_value_list))
                     result_list.append(min(vol_list))
@@ -115,7 +115,7 @@ class ADCTest:
         self.start = content.split('\n')[2].split('=')[1]
         self.end = content.split('\n')[3].split('=')[1]
         self.step = content.split('\n')[4].split('=')[1]
-        # self.number = content.split('\n')[5].split('=')[1]
+        self.number = int(content.split('\n')[5].split('=')[1])
 
     def startTest(self):
         try:
@@ -141,7 +141,7 @@ class ADCTest:
                 powerSetVolt(powerSuppler, self.powerType, voltage)
                 time.sleep(1)
                 dataList = [testvol]
-                readData2Excel(dataList, com)
+                readData2Excel(dataList, com, self.number)
             powerOff(powerSuppler, self.powerType)
 
 
