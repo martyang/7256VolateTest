@@ -66,43 +66,38 @@ def getWorkBook() -> Workbook:
     return wkbook
 
 
-def readData2Excel(dataList, number):
-    portlist = serial.tools.list_ports_windows.comports()
+def readData2Excel(dataList, com):
     result_list = dataList
-    for item in portlist:
-        if 'COM1' not in item:
-            com = str(item).split('-')[0]
-            print('测试串口' + com)
-            adc_value_list = []
-            vol_list = []
-            try:
-                sercom = serial.Serial(com, 115200)
-                sercom.flushOutput()
-                time.sleep(1)
-                while True:
-                    if sercom.inWaiting():
-                        recv_data = sercom.readline().decode('utf-8', errors='replace')
-                        if 'ntc_drv_read_temp adc value' in recv_data:
-                            adc_value = recv_data.split(':')[-1].strip()
-                            adc_value_list.append(int(adc_value))
-                            print(recv_data)
-                        elif 'ntc_drv_read_temp cali voltage value' in recv_data:
-                            vol = recv_data.split(':')[-1].strip().split(' ')[0]
-                            vol_list.append(int(vol))
-                            print(recv_data)
-                        if len(adc_value_list) == number and len(vol_list) == number:
-                            result_list.append(min(adc_value_list))
-                            result_list.append(max(adc_value_list))
-                            result_list.append(min(vol_list))
-                            result_list.append(max(vol_list))
-                            print('break')
-                            break
-                sercom.close()
-            except SerialException:
-                print('串口开启失败！')
-                time.sleep(2)
-            except UnicodeDecodeError:
-                print('decode error')
+    print('测试串口' + com)
+    adc_value_list = []
+    vol_list = []
+    try:
+        sercom = serial.Serial(com, 115200)
+        sercom.flushOutput()
+        time.sleep(1)
+        while True:
+            if sercom.inWaiting():
+                recv_data = sercom.readline().decode('utf-8', errors='replace')
+                if 'ntc_drv_read_temp adc value' in recv_data:
+                    adc_value = recv_data.split(':')[-1].strip()
+                    adc_value_list.append(int(adc_value))
+                    print(recv_data)
+                elif 'ntc_drv_read_temp cali voltage value' in recv_data:
+                    vol = recv_data.split(':')[-1].strip().split(' ')[0]
+                    vol_list.append(int(vol))
+                    print(recv_data)
+                if len(adc_value_list) == 20 or len(vol_list) == 20:
+                    result_list.append(min(adc_value_list))
+                    result_list.append(max(adc_value_list))
+                    result_list.append(min(vol_list))
+                    result_list.append(max(vol_list))
+                    break
+        sercom.close()
+    except SerialException:
+        print('串口开启失败！')
+        time.sleep(2)
+    except UnicodeDecodeError:
+        print('decode error')
     print(result_list)
     workbook = getWorkBook()
     workbook.active.append(result_list)
@@ -120,7 +115,7 @@ class ADCTest:
         self.start = content.split('\n')[2].split('=')[1]
         self.end = content.split('\n')[3].split('=')[1]
         self.step = content.split('\n')[4].split('=')[1]
-        self.number = content.split('\n')[5].split('=')[1]
+        # self.number = content.split('\n')[5].split('=')[1]
 
     def startTest(self):
         try:
@@ -135,6 +130,9 @@ class ADCTest:
             powerSetVolt(powerSuppler, self.powerType, 0)
             powerSetCurrent(powerSuppler, self.powerType, 0.1)
             powerON(powerSuppler, self.powerType)
+
+            portlist = serial.tools.list_ports_windows.comports()
+            com = str(portlist[0]).split('-')[0]
             print('开始测试')
             time.sleep(2)
             for testvol in range(int(self.start), int(self.end) + int(self.step), int(self.step)):
@@ -143,7 +141,7 @@ class ADCTest:
                 powerSetVolt(powerSuppler, self.powerType, voltage)
                 time.sleep(1)
                 dataList = [testvol]
-                readData2Excel(dataList, int(self.number))
+                readData2Excel(dataList, com)
             powerOff(powerSuppler, self.powerType)
 
 
